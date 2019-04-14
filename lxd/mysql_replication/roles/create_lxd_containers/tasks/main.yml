@@ -1,0 +1,61 @@
+- name: Create LXD Container
+  connection: local
+  become: false
+  lxd_container:
+    name: "{{item}}"
+    state: started
+    source:
+      type: image
+      mode: pull
+      server: https://images.linuxcontainers.org
+      protocol: lxd
+      alias: centos/7/amd64
+    profiles: ['default']
+    wait_for_ipv4_addresses: true
+    timeout: 600
+    with_items:
+      - "{{groups['containers']}}"
+
+- name: Install Percona Server/Client
+  yum:
+    name: {{packages}}
+    state: present
+  vars:
+    packages:
+      - Percona-Server-server-57.x86_64
+      - Percona-Server-client-57.x86_64
+
+- name: mysqld Parameters
+  ini_file:
+    path: /etc/my.cnf
+    section: mysqld
+    option: "{{ item.param }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { param: "server_id", value: "{{ ['10','20','30','40','50','60','70','80','90']|random }}" }
+    - { param: "performance_schema", value: "OFF" }
+    - { param: "log_bin", value: "mysqld-bin" }
+    - { param: "binlog_format", value: "ROW" }
+    - { param: "innodb_flush_log_at_trx_commit", value: "0" }
+
+- name: start mysql
+  systemd:
+    state: restarted
+    name: mysql
+    enabled: yes
+
+- name: Get root password
+  shell: >
+    awk -F': ' '$0 ~ "temporary password"{print $2}' /var/log/mysqld.log
+  register: mysql_root_password
+
+- name: Reset root password
+  shell: >
+    mysql -e "SET password='Perc0na1234#'" -uroot -p"{{ mysql_root_password.stdout }}" --connect-expired-password
+
+- name: Save root to global config
+  ini_file:
+    path: /etc/my.cnf
+    section: mysql
+    option: password
+    value: "\"Perc0na1234#\""

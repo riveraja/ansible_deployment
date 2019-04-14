@@ -1,0 +1,6 @@
+[local]
+localhost
+
+[containers]
+mytest01 ansible_connection=lxd
+mytest02 ansible_connection=lxd
