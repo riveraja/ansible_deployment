@@ -2,7 +2,7 @@
   connection: local
   become: false
   lxd_container:
-    name: "{{item}}"
+    name: "{{ item }}"
     state: started
     source:
       type: image
