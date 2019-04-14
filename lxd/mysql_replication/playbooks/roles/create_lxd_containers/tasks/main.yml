@@ -18,7 +18,7 @@
 
 - name: Install Percona Server/Client
   yum:
-    name: {{packages}}
+    name: {{ packages }}
     state: present
   vars:
     packages:
