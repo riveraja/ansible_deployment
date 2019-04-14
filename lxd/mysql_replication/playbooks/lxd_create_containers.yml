@@ -1,4 +1,4 @@
 - hosts: localhost
   connection: local
   roles:
-    - create_lxd_containers
+    - role: 'roles/create_lxd_containers'
